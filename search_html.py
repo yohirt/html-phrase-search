@@ -89,6 +89,7 @@ def find_fragments(text, search_words):
 
     words = split_text_into_words(text)
     results = []
+    match_counts = Counter()
 
     normalized_search_words = [normalize_word(word) for word in search_words]
 
@@ -96,6 +97,7 @@ def find_fragments(text, search_words):
         normalized_current_word = normalize_word(current_word)
 
         if normalized_current_word in normalized_search_words:
+            match_counts[normalized_current_word] += 1
             start = max(0, index - WORDS_BEFORE)
             end = min(len(words), index + WORDS_AFTER + 1)
 
@@ -104,6 +106,8 @@ def find_fragments(text, search_words):
 
             results.append({
                 "word": current_word,
+                "word_occurrence": match_counts[normalized_current_word],
+                "word_index": index + 1,
                 "fragment": fragment
             })
 
@@ -208,9 +212,14 @@ def main():
 
             for match_number, item in enumerate(fragments, start=1):
                 found_word = item["word"]
+                found_word_index = item["word_index"]
+                found_word_occurrence = item["word_occurrence"]
                 fragment = item["fragment"]
 
-                results_by_folder[main_folder].append(f"{match_number}. Szukane słowo: {found_word}\n")
+                results_by_folder[main_folder].append(
+                    f"{match_number}. Szukane słowo: {found_word} "
+                    f"({found_word_occurrence}. wystąpienie, indeks słowa: {found_word_index})\n"
+                )
                 results_by_folder[main_folder].append(f"- ... {fragment} ...\n\n")
 
     if results_by_folder:
