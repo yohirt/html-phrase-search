@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Plik testowy do wyszukiwania słów</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>To jest nagłówek strony</h1>
+    <p>Ten tekst jest w headerze i powinien zostać pominięty przez skrypt.</p>
+</header>
+
+<nav>
+    <a href="#">głowa</a>
+    <a href="#">ręka</a>
+    <a href="#">noga</a>
+</nav>
+
+<main>
+    <h2>Test wyszukiwania całych słów</h2>
+
+    <p>
+        To jest pierwszy akapit testowy. W tym miejscu pojawia się słowo głowa.
+        Skrypt powinien je znaleźć, ponieważ jest to osobne słowo. Przed tym słowem
+        i po tym słowie znajduje się dodatkowy tekst, żeby można było sprawdzić,
+        czy program pokazuje kontekst pięćdziesięciu słów przed oraz pięćdziesięciu
+        słów po znalezionym wyrazie. Ten fragment jest celowo trochę dłuższy,
+        aby wynik w pliku tekstowym był widoczny i łatwy do sprawdzenia.
+    </p>
+
+    <p>
+        W tym akapicie występuje nazwisko Głowacka. Skrypt nie powinien znaleźć
+        słowa głowa wewnątrz nazwiska Głowacka, ponieważ szukamy wyłącznie całego
+        słowa. Podobnie nie powinno zostać znalezione słowo ręka w wyrazie rękawiczka
+        ani słowo noga w wyrazie nogawka.
+    </p>
+
+    <p>
+        Tutaj testujemy kilka słów naraz. Najpierw występuje ręka, potem pojawia się
+        noga, a później jeszcze raz głowa. Dzięki temu można uruchomić skrypt komendą:
+        python search_html.py głowa ręka noga i sprawdzić, czy każde z tych słów
+        zostanie odnalezione jako osobne słowo.
+    </p>
+
+    <p>
+        Ten akapit zawiera dużo dodatkowych słów, aby kontekst był dłuższy.
+        Ala poszła do szkoły i zabrała zeszyt, książkę, długopis, plecak,
+        kanapkę, wodę, notes, telefon, ładowarkę, ołówek, gumkę, linijkę,
+        temperówkę, kredki, mazaki, kartkę, teczkę, kalkulator, słownik,
+        mapę, kompas, latarkę, zegarek, bilet, klucze, parasol, kurtkę,
+        szalik, czapkę, rękawiczki, buty, rower, kask, lampkę, aparat,
+        mikrofon, statyw, kabel, monitor, myszkę, klawiaturę, komputer,
+        tablet, głośnik, perkusję, talerz, werbel, pałki, metronom i nuty.
+        W środku tego tekstu pojawia się słowo głowa i dalej mamy kolejne
+        słowa do testu: okno, drzwi, podłoga, sufit, ściana, obraz,
+        dywan, krzesło, biurko, półka, kwiatek, doniczka, zasłona,
+        lampa, kubek, talerz, widelec, łyżka, nóż, garnek, patelnia,
+        lodówka, piekarnik, czajnik, kawa, herbata, mleko, cukier,
+        sól, pieprz, chleb, masło, ser, jabłko, gruszka, śliwka,
+        wiśnia, truskawka, borówka, malina, porzeczka, agrest i arbuz.
+    </p>
+
+    <p>
+        Na końcu mamy jeszcze test wielkich liter: GŁOWA, RĘKA oraz NOGA.
+        Skrypt powinien znaleźć te słowa niezależnie od wielkości liter.
+    </p>
+</main>
+
+<footer>
+    <p>Stopka strony zawiera słowo głowa, ale powinna zostać pominięta.</p>
+</footer>
+
+<script>
+    const test = "głowa w skrypcie JavaScript powinna zostać pominięta";
+</script>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 from pathlib import Path
 from bs4 import BeautifulSoup
+from collections import Counter
 import re
 import sys
 
@@ -9,10 +10,14 @@ import sys
 # ==========================
 
 INPUT_DIR = Path("input_html")
-OUTPUT_FILE = Path("wyniki.txt")
+OUTPUT_DIR = Path("wyniki")
 
 # Domyślne słowo, jeśli nie podasz go z terminala
-DEFAULT_SEARCH_WORD = "programowanie"
+DEFAULT_SEARCH_WORDS = ["programowanie"]
+
+# Ile słów przed i po znalezionym słowie pokazać
+WORDS_BEFORE = 50
+WORDS_AFTER = 50
 
 
 # ==========================
@@ -28,7 +33,6 @@ def extract_text_from_html(file_path):
     html = file_path.read_text(encoding="utf-8", errors="ignore")
     soup = BeautifulSoup(html, "html.parser")
 
-    # Usuwamy elementy, których nie chcemy analizować
     unwanted_tags = [
         "script",
         "style",
@@ -48,7 +52,6 @@ def extract_text_from_html(file_path):
     for tag in soup(unwanted_tags):
         tag.decompose()
 
-    # Jeżeli strona ma <main>, analizujemy głównie treść z <main>
     main_content = soup.find("main")
 
     if main_content:
@@ -56,77 +59,176 @@ def extract_text_from_html(file_path):
     else:
         text = soup.get_text(separator=" ", strip=True)
 
-    # Porządkujemy wielokrotne spacje
     text = re.sub(r"\s+", " ", text)
 
     return text
 
 
-def find_fragments(text, word):
+def split_text_into_words(text):
     """
-    Szuka zdań lub fragmentów zawierających podane słowo.
+    Dzieli tekst na słowa.
+    Zachowuje polskie znaki.
     """
 
-    # Dzielimy tekst na zdania po kropce, wykrzykniku lub znaku zapytania
-    sentences = re.split(r"(?<=[.!?])\s+", text)
+    return re.findall(r"\b[\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b", text, flags=re.UNICODE)
 
+
+def normalize_word(word):
+    """
+    Zamienia słowo na małe litery do porównywania.
+    """
+
+    return word.lower()
+
+
+def find_fragments(text, search_words):
+    """
+    Szuka całych słów.
+    Dla każdego znalezienia zwraca 50 słów przed i 50 słów po.
+    """
+
+    words = split_text_into_words(text)
     results = []
 
-    for sentence in sentences:
-        if word.lower() in sentence.lower():
-            results.append(sentence.strip())
+    normalized_search_words = [normalize_word(word) for word in search_words]
+
+    for index, current_word in enumerate(words):
+        normalized_current_word = normalize_word(current_word)
+
+        if normalized_current_word in normalized_search_words:
+            start = max(0, index - WORDS_BEFORE)
+            end = min(len(words), index + WORDS_AFTER + 1)
+
+            fragment_words = words[start:end]
+            fragment = " ".join(fragment_words)
+
+            results.append({
+                "word": current_word,
+                "fragment": fragment
+            })
 
     return results
 
 
-def save_results(results):
+def get_main_folder(relative_path):
     """
-    Zapisuje wyniki do pliku tekstowego.
+    Zwraca nazwę głównego katalogu w input_html.
+
+    Przykład:
+    input_html/strona1/o-nas/index.html
+    zwróci:
+    strona1
+
+    Jeżeli plik HTML leży bezpośrednio w input_html,
+    trafia do pliku _glowny_poziom.txt
     """
 
-    OUTPUT_FILE.write_text("".join(results), encoding="utf-8")
+    if len(relative_path.parts) > 1:
+        return relative_path.parts[0]
+
+    return "_glowny_poziom"
+
+
+def safe_filename(name):
+    """
+    Czyści nazwę pliku wynikowego.
+    """
+
+    name = re.sub(r"[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+", "_", name, flags=re.UNICODE)
+    return name.strip("_")
+
+
+def save_results_by_main_folder(results_by_folder):
+    """
+    Zapisuje wyniki osobno dla każdego głównego katalogu.
+    """
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    for folder_name, results in results_by_folder.items():
+        output_file = OUTPUT_DIR / f"{safe_filename(folder_name)}.txt"
+        output_file.write_text("".join(results), encoding="utf-8")
 
 
 def main():
-    # Jeżeli podasz słowo z terminala, użyje tego słowa
-    # np. python search_html.py React
+    # Przykład:
+    # python search_html.py głowa ręka noga
     if len(sys.argv) > 1:
-        search_word = " ".join(sys.argv[1:])
+        search_words = sys.argv[1:]
     else:
-        search_word = DEFAULT_SEARCH_WORD
+        search_words = DEFAULT_SEARCH_WORDS
 
-    print(f"Szukam frazy: {search_word}")
+    print("Szukam słów:")
+    for word in search_words:
+        print(f"- {word}")
 
     if not INPUT_DIR.exists():
-        print(f"Brak katalogu: {INPUT_DIR}")
-        print("Utwórz katalog input_html i wrzuć do niego pliki HTML.")
+        print(f"\nBrak katalogu: {INPUT_DIR}")
+        print("Utwórz katalog input_html i wrzuć do niego katalogi z plikami HTML.")
         return
 
     html_files = list(INPUT_DIR.rglob("*.html"))
 
     if not html_files:
-        print("Nie znaleziono plików HTML w katalogu input_html.")
+        print("\nNie znaleziono plików HTML w katalogu input_html.")
         return
 
-    all_results = []
+    results_by_folder = {}
+    total_matches = 0
+    total_counts_by_word = Counter()
 
     for html_file in html_files:
         relative_path = html_file.relative_to(INPUT_DIR)
+        main_folder = get_main_folder(relative_path)
+
         print(f"Sprawdzam plik: {relative_path}")
 
         text = extract_text_from_html(html_file)
-        fragments = find_fragments(text, search_word)
+        fragments = find_fragments(text, search_words)
 
         if fragments:
+            if main_folder not in results_by_folder:
+                results_by_folder[main_folder] = []
 
-            all_results.append(f"\n=== {relative_path} ===\n\n")
+            match_count = len(fragments)
+            total_matches += match_count
+            counts_by_word = Counter(normalize_word(item["word"]) for item in fragments)
+            total_counts_by_word.update(counts_by_word)
 
-            for fragment in fragments:
-                all_results.append(f"- {fragment}\n")
+            results_by_folder[main_folder].append(f"\n=== PLIK: {relative_path} ===\n\n")
+            results_by_folder[main_folder].append(f"Liczba znalezionych słów: {match_count}\n\n")
+            results_by_folder[main_folder].append("Zliczenie według słów:\n")
 
-    if all_results:
-        save_results(all_results)
-        print(f"\nGotowe. Wyniki zapisano w pliku: {OUTPUT_FILE}")
+            for search_word in search_words:
+                normalized_search_word = normalize_word(search_word)
+                word_count = counts_by_word.get(normalized_search_word, 0)
+                results_by_folder[main_folder].append(f"- {search_word}: {word_count}\n")
+
+            results_by_folder[main_folder].append("\n")
+
+            for match_number, item in enumerate(fragments, start=1):
+                found_word = item["word"]
+                fragment = item["fragment"]
+
+                results_by_folder[main_folder].append(f"{match_number}. Szukane słowo: {found_word}\n")
+                results_by_folder[main_folder].append(f"- ... {fragment} ...\n\n")
+
+    if results_by_folder:
+        save_results_by_main_folder(results_by_folder)
+
+        print("\nGotowe. Wyniki zapisano w katalogu:")
+        print(OUTPUT_DIR)
+        print(f"\nŁączna liczba znalezionych słów: {total_matches}")
+
+        print("\nZliczenie według słów:")
+        for search_word in search_words:
+            normalized_search_word = normalize_word(search_word)
+            word_count = total_counts_by_word.get(normalized_search_word, 0)
+            print(f"- {search_word}: {word_count}")
+
+        print("\nUtworzone pliki:")
+        for folder_name in results_by_folder:
+            print(f"- {OUTPUT_DIR / (safe_filename(folder_name) + '.txt')}")
     else:
         print("\nNie znaleziono żadnych pasujących fragmentów.")
 
