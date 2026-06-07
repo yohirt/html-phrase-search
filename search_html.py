@@ -201,8 +201,6 @@ def main():
             total_counts_by_word.update(counts_by_word)
 
             results_by_folder[main_folder].append(f"\n=== PLIK: {relative_path} ===\n\n")
-            results_by_folder[main_folder].append(f"Liczba znalezionych słów: {match_count}\n\n")
-            results_by_folder[main_folder].append("Zliczenie według słów:\n")
 
             for search_word in search_words:
                 normalized_search_word = normalize_word(search_word)
@@ -219,9 +217,7 @@ def main():
                 fragment = item["fragment"]
 
                 results_by_folder[main_folder].append(
-                    f"{match_number}. Szukane słowo: {found_word} "
-                    f"({found_word_occurrence}. wystąpienie, indeks słowa: {found_word_index}, "
-                    f"globalnie: {global_match_number})\n"
+                    f"{global_match_number})\n"
                 )
                 results_by_folder[main_folder].append(f"- ... {fragment} ...\n\n")
 
