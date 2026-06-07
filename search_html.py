@@ -180,6 +180,7 @@ def main():
     results_by_folder = {}
     total_matches = 0
     total_counts_by_word = Counter()
+    global_match_number = 0
 
     for html_file in html_files:
         relative_path = html_file.relative_to(INPUT_DIR)
@@ -211,6 +212,7 @@ def main():
             results_by_folder[main_folder].append("\n")
 
             for match_number, item in enumerate(fragments, start=1):
+                global_match_number += 1
                 found_word = item["word"]
                 found_word_index = item["word_index"]
                 found_word_occurrence = item["word_occurrence"]
@@ -218,7 +220,8 @@ def main():
 
                 results_by_folder[main_folder].append(
                     f"{match_number}. Szukane słowo: {found_word} "
-                    f"({found_word_occurrence}. wystąpienie, indeks słowa: {found_word_index})\n"
+                    f"({found_word_occurrence}. wystąpienie, indeks słowa: {found_word_index}, "
+                    f"globalnie: {global_match_number})\n"
                 )
                 results_by_folder[main_folder].append(f"- ... {fragment} ...\n\n")
 
