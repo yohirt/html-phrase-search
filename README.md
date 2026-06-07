@@ -2,6 +2,8 @@
 
 Program przeszukuje pliki HTML w katalogu `input_html` i zapisuje wyniki do katalogu `wyniki`.
 
+[Link do repo](https://github.com/yohirt/html-phrase-search)
+
 ## Do czego służy program
 
 Skrypt wyszukuje podane słowa w treści stron HTML i zapisuje:
