@@ -205,7 +205,7 @@ def main():
             for search_word in search_words:
                 normalized_search_word = normalize_word(search_word)
                 word_count = counts_by_word.get(normalized_search_word, 0)
-                results_by_folder[main_folder].append(f"- {search_word}: {word_count}\n")
+                # results_by_folder[main_folder].append(f"- {search_word}: {word_count}\n")
 
             results_by_folder[main_folder].append("\n")
 
