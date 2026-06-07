@@ -94,21 +94,27 @@ wyniki/_glowny_poziom.txt
 
 ## Jak czytać wynik
 
-Przykład pojedynczego wpisu:
+Wyniki zapisywane są w formacie tekstowym, gdzie każde znalezione trafienie ma następującą strukturę:
 
 ```text
 1. Szukane słowo: głowa (1. wystąpienie, indeks słowa: 16, globalnie: 37)
-- ... fragment tekstu wokół znalezionego słowa ...
+znaczenie przejmowania się rzeczami to rodzaj głowa pełna myśli i zmartwień
 ```
 
-Znaczenie:
+### Wyjaśnienie kolumn:
 
-- `1.`: numer wpisu na liście wyników w danym pliku,
-- `głowa`: słowo, które zostało znalezione,
-- `1. wystąpienie`: które to kolejne wystąpienie tego słowa w danym pliku,
-- `indeks słowa: 16`: pozycja słowa w tekście po podzieleniu go na słowa,
-- `globalnie: 37`: kolejne trafienie liczone łącznie przez wszystkie przeszukane pliki,
-- poniżej znajduje się fragment kontekstu.
+- **1.** — numer wpisu na liście wyników w danym pliku
+- **głowa** — szukane słowo, które zostało znalezione
+- **1. wystąpienie** — które to kolejne wystąpienie tego słowa w danym pliku (jeśli słowo pojawi się wielokrotnie, licznik będzie się zwiększać)
+- **indeks słowa: 16** — pozycja słowa w tekście po podzieleniu go na słowa
+- **globalnie: 37** — kolejne trafienie liczone łącznie przez wszystkie przeszukane pliki (jeśli szukamy kilka słów, każde słowo ma swój globalny licznik)
+- **poniżej** — fragment tekstu wokół znalezionego słowa (50 słów przed i 50 słów po trafieniu dla lepszego kontekstu)
+
+### Notatki:
+
+- Program szuka tylko **całych słów** — wyszukanie `głowa` nie dopasuje `głownie` czy `głównie`
+- Wyszukiwanie **nie rozróżnia wielkości liter** — `głowa`, `GŁOWA` i `Głowa` są traktowane jako to samo słowo
+- Każde szukane słowo ma swój własny licznik globalny (jeśli szukasz `głowa ręka noga`, każde słowo ma oddzielny licznik)
 
 ## Co program pomija
 
