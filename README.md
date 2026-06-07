@@ -10,6 +10,7 @@ Skrypt wyszukuje podane słowa w treści stron HTML i zapisuje:
 - zliczenie według każdego szukanego słowa,
 - fragment tekstu wokół każdego trafienia,
 - numer trafienia na liście wyników,
+- globalny numer trafienia we wszystkich przeszukanych plikach,
 - które to wystąpienie danego słowa,
 - indeks słowa w tekście.
 
@@ -96,7 +97,7 @@ wyniki/_glowny_poziom.txt
 Przykład pojedynczego wpisu:
 
 ```text
-1. Szukane słowo: głowa (1. wystąpienie, indeks słowa: 16)
+1. Szukane słowo: głowa (1. wystąpienie, indeks słowa: 16, globalnie: 37)
 - ... fragment tekstu wokół znalezionego słowa ...
 ```
 
@@ -106,6 +107,7 @@ Znaczenie:
 - `głowa`: słowo, które zostało znalezione,
 - `1. wystąpienie`: które to kolejne wystąpienie tego słowa w danym pliku,
 - `indeks słowa: 16`: pozycja słowa w tekście po podzieleniu go na słowa,
+- `globalnie: 37`: kolejne trafienie liczone łącznie przez wszystkie przeszukane pliki,
 - poniżej znajduje się fragment kontekstu.
 
 ## Co program pomija
