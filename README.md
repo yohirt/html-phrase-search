@@ -11,10 +11,7 @@ Skrypt wyszukuje podane słowa w treści stron HTML i zapisuje:
 - liczbę znalezionych trafień,
 - zliczenie według każdego szukanego słowa,
 - fragment tekstu wokół każdego trafienia,
-- numer trafienia na liście wyników,
-- globalny numer trafienia we wszystkich przeszukanych plikach,
-- które to wystąpienie danego słowa,
-- indeks słowa w tekście.
+- globalny numer trafienia we wszystkich przeszukanych plikach.
 
 Program szuka tylko całych słów.
 To znaczy, że wyszukanie słowa `głowa` nie dopasuje `Głowacka`.
@@ -28,9 +25,11 @@ To znaczy, że `głowa`, `GŁOWA` i `Głowa` są traktowane jako to samo słowo.
 2. Z każdego pliku usuwa elementy techniczne i poboczne, między innymi:
    `script`, `style`, `head`, `meta`, `link`, `noscript`, `svg`, `nav`, `footer`, `header`, `form`, `button`, `aside`.
 3. Jeśli w pliku istnieje znacznik `main`, program przeszukuje przede wszystkim jego treść.
-4. Tekst jest dzielony na słowa z zachowaniem polskich znaków.
-5. Dla każdego znalezionego słowa program zapisuje kontekst: 50 słów przed i 50 słów po trafieniu.
+4. Tekst jest analizowany słowo po słowie z zachowaniem polskich znaków.
+5. Dla każdego znalezionego słowa program zapisuje kontekst: domyślnie 50 słów przed i 50 słów po trafieniu, zachowując oryginalną interpunkcję w wyciętym fragmencie.
 6. Wyniki są zapisywane do osobnych plików tekstowych w katalogu `wyniki`.
+
+Liczbę słów pokazywanych przed i po trafieniu można zmienić w zmiennych `WORDS_BEFORE` oraz `WORDS_AFTER` w pliku `search_html.py`.
 
 ## Wymagania
 
@@ -99,24 +98,22 @@ wyniki/_glowny_poziom.txt
 Wyniki zapisywane są w formacie tekstowym, gdzie każde znalezione trafienie ma następującą strukturę:
 
 ```text
-1. Szukane słowo: głowa (1. wystąpienie, indeks słowa: 16, globalnie: 37)
-znaczenie przejmowania się rzeczami to rodzaj głowa pełna myśli i zmartwień
+37)
+- ... znaczenie przejmowania się rzeczami to rodzaj głowa pełna myśli i zmartwień. To zdanie pozostaje z kropkami, przecinkami i inną interpunkcją tak jak w oryginale ...
 ```
 
 ### Wyjaśnienie kolumn:
 
-- **1.** — numer wpisu na liście wyników w danym pliku
-- **głowa** — szukane słowo, które zostało znalezione
-- **1. wystąpienie** — które to kolejne wystąpienie tego słowa w danym pliku (jeśli słowo pojawi się wielokrotnie, licznik będzie się zwiększać)
-- **indeks słowa: 16** — pozycja słowa w tekście po podzieleniu go na słowa
-- **globalnie: 37** — kolejne trafienie liczone łącznie przez wszystkie przeszukane pliki (jeśli szukamy kilka słów, każde słowo ma swój globalny licznik)
-- **poniżej** — fragment tekstu wokół znalezionego słowa (50 słów przed i 50 słów po trafieniu dla lepszego kontekstu)
+- **37)** — kolejne trafienie liczone łącznie przez wszystkie przeszukane pliki
+- **linia poniżej** — fragment tekstu wokół znalezionego słowa (domyślnie 50 słów przed i 50 słów po trafieniu dla lepszego kontekstu)
+- **interpunkcja i zapis** — fragment zachowuje przecinki, kropki, dwukropki i wielkość liter tak jak w oryginalnym tekście po wyciągnięciu treści z HTML
 
 ### Notatki:
 
 - Program szuka tylko **całych słów** — wyszukanie `głowa` nie dopasuje `głownie` czy `głównie`
 - Wyszukiwanie **nie rozróżnia wielkości liter** — `głowa`, `GŁOWA` i `Głowa` są traktowane jako to samo słowo
-- Każde szukane słowo ma swój własny licznik globalny (jeśli szukasz `głowa ręka noga`, każde słowo ma oddzielny licznik)
+- Licznik wyników jest **wspólny dla wszystkich trafień** i rośnie przez wszystkie przeszukane pliki
+- Liczbę słów kontekstu można zmienić w zmiennych `WORDS_BEFORE` i `WORDS_AFTER`
 
 ## Co program pomija
 

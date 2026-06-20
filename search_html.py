@@ -81,28 +81,47 @@ def normalize_word(word):
     return word.lower()
 
 
+def expand_fragment_bounds_to_punctuation(text, start, end):
+    """
+    Rozszerza granice fragmentu o interpunkcje, ktora faktycznie przylega
+    do skrajnych slow. Niczego nie dopisuje.
+    """
+
+    while start > 0 and not text[start - 1].isspace() and not re.match(r"\w", text[start - 1], flags=re.UNICODE):
+        start -= 1
+
+    while end < len(text) and not text[end].isspace() and not re.match(r"\w", text[end], flags=re.UNICODE):
+        end += 1
+
+    return start, end
+
+
 def find_fragments(text, search_words):
     """
     Szuka całych słów.
-    Dla każdego znalezienia zwraca 50 słów przed i 50 słów po.
+    Dla każdego znalezienia zwraca 50 słów przed i 50 słów po,
+    zachowując oryginalną interpunkcję i zapis fragmentu.
     """
 
-    words = split_text_into_words(text)
+    word_matches = list(re.finditer(r"\b[\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b", text, flags=re.UNICODE))
     results = []
     match_counts = Counter()
 
     normalized_search_words = [normalize_word(word) for word in search_words]
 
-    for index, current_word in enumerate(words):
+    for index, match in enumerate(word_matches):
+        current_word = match.group(0)
         normalized_current_word = normalize_word(current_word)
 
         if normalized_current_word in normalized_search_words:
             match_counts[normalized_current_word] += 1
-            start = max(0, index - WORDS_BEFORE)
-            end = min(len(words), index + WORDS_AFTER + 1)
+            start_word_index = max(0, index - WORDS_BEFORE)
+            end_word_index = min(len(word_matches) - 1, index + WORDS_AFTER)
 
-            fragment_words = words[start:end]
-            fragment = " ".join(fragment_words)
+            fragment_start = word_matches[start_word_index].start()
+            fragment_end = word_matches[end_word_index].end()
+            fragment_start, fragment_end = expand_fragment_bounds_to_punctuation(text, fragment_start, fragment_end)
+            fragment = text[fragment_start:fragment_end].strip()
 
             results.append({
                 "word": current_word,
@@ -211,9 +230,6 @@ def main():
 
             for match_number, item in enumerate(fragments, start=1):
                 global_match_number += 1
-                found_word = item["word"]
-                found_word_index = item["word_index"]
-                found_word_occurrence = item["word_occurrence"]
                 fragment = item["fragment"]
 
                 results_by_folder[main_folder].append(
