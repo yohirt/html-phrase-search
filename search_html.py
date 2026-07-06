@@ -1,6 +1,7 @@
-from pathlib import Path
-from bs4 import BeautifulSoup
 from collections import Counter
+from html import unescape
+from html.parser import HTMLParser
+from pathlib import Path
 import re
 import sys
 
@@ -12,12 +13,119 @@ import sys
 INPUT_DIR = Path("input_html")
 OUTPUT_DIR = Path("wyniki")
 
-# Domyślne słowo, jeśli nie podasz go z terminala
+# Domyślne słowo, jeśli nie podasz go z terminala.
 DEFAULT_SEARCH_WORDS = ["programowanie"]
 
-# Ile słów przed i po znalezionym słowie pokazać
+# Ile słów przed i po znalezionym słowie pokazać.
 WORDS_BEFORE = 50
 WORDS_AFTER = 50
+
+WORD_PATTERN = re.compile(r"\b[\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b", flags=re.UNICODE)
+VALID_NUMERIC_CHARREF_PATTERN = re.compile(r"&#(?:x[0-9a-fA-F]+|\d+);")
+BROKEN_NUMERIC_CHARREF_PATTERN = re.compile(r"&#[^\s<;]*;?")
+
+
+def sanitize_numeric_charrefs(html):
+    """
+    Dekoduje poprawne encje numeryczne i usuwa uszkodzone.
+
+    Niektóre strony zawierają fragmenty typu &#x... z niepoprawnymi znakami.
+    Standardowy parser HTML potrafi wtedy przerwać analizę tekstu.
+    """
+
+    def decode_match(match):
+        value = match.group(0)[2:-1]
+
+        try:
+            if value.lower().startswith("x"):
+                return chr(int(value[1:], 16))
+
+            return chr(int(value, 10))
+        except (OverflowError, ValueError):
+            return " "
+
+    html = VALID_NUMERIC_CHARREF_PATTERN.sub(decode_match, html)
+    return BROKEN_NUMERIC_CHARREF_PATTERN.sub(" ", html)
+
+
+class VisibleTextParser(HTMLParser):
+    """
+    Wyciąga tekst widoczny dla użytkownika.
+
+    Parser działa z convert_charrefs=False, żeby wadliwe encje HTML nie
+    przerywały działania programu.
+    """
+
+    unwanted_tags = {
+        "script",
+        "style",
+        "head",
+        "meta",
+        "link",
+        "noscript",
+        "svg",
+        "nav",
+        "footer",
+        "header",
+        "form",
+        "button",
+        "aside",
+    }
+
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self._ignored_depth = 0
+        self._main_depth = 0
+        self._all_text_parts = []
+        self._main_text_parts = []
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+
+        if tag in self.unwanted_tags:
+            self._ignored_depth += 1
+
+        if tag == "main" and self._ignored_depth == 0:
+            self._main_depth += 1
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+
+        if tag == "main" and self._main_depth > 0:
+            self._main_depth -= 1
+
+        if tag in self.unwanted_tags and self._ignored_depth > 0:
+            self._ignored_depth -= 1
+
+    def handle_data(self, data):
+        self._append_text(unescape(data))
+
+    def handle_entityref(self, name):
+        self._append_text(unescape(f"&{name};"))
+
+    def handle_charref(self, name):
+        try:
+            if name.lower().startswith("x"):
+                value = chr(int(name[1:], 16))
+            else:
+                value = chr(int(name, 10))
+        except (OverflowError, ValueError):
+            value = " "
+
+        self._append_text(value)
+
+    def _append_text(self, text):
+        if self._ignored_depth > 0 or not text:
+            return
+
+        self._all_text_parts.append(text)
+
+        if self._main_depth > 0:
+            self._main_text_parts.append(text)
+
+    def get_text(self):
+        parts = self._main_text_parts or self._all_text_parts
+        return re.sub(r"\s+", " ", " ".join(parts)).strip()
 
 
 # ==========================
@@ -31,37 +139,11 @@ def extract_text_from_html(file_path):
     """
 
     html = file_path.read_text(encoding="utf-8", errors="ignore")
-    soup = BeautifulSoup(html, "html.parser")
-
-    unwanted_tags = [
-        "script",
-        "style",
-        "head",
-        "meta",
-        "link",
-        "noscript",
-        "svg",
-        "nav",
-        "footer",
-        "header",
-        "form",
-        "button",
-        "aside"
-    ]
-
-    for tag in soup(unwanted_tags):
-        tag.decompose()
-
-    main_content = soup.find("main")
-
-    if main_content:
-        text = main_content.get_text(separator=" ", strip=True)
-    else:
-        text = soup.get_text(separator=" ", strip=True)
-
-    text = re.sub(r"\s+", " ", text)
-
-    return text
+    html = sanitize_numeric_charrefs(html)
+    parser = VisibleTextParser()
+    parser.feed(html)
+    parser.close()
+    return parser.get_text()
 
 
 def split_text_into_words(text):
@@ -70,7 +152,7 @@ def split_text_into_words(text):
     Zachowuje polskie znaki.
     """
 
-    return re.findall(r"\b[\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b", text, flags=re.UNICODE)
+    return WORD_PATTERN.findall(text)
 
 
 def normalize_word(word):
@@ -83,8 +165,8 @@ def normalize_word(word):
 
 def expand_fragment_bounds_to_punctuation(text, start, end):
     """
-    Rozszerza granice fragmentu o interpunkcje, ktora faktycznie przylega
-    do skrajnych slow. Niczego nie dopisuje.
+    Rozszerza granice fragmentu o interpunkcję, która faktycznie przylega
+    do skrajnych słów. Niczego nie dopisuje.
     """
 
     while start > 0 and not text[start - 1].isspace() and not re.match(r"\w", text[start - 1], flags=re.UNICODE):
@@ -103,7 +185,7 @@ def find_fragments(text, search_words):
     zachowując oryginalną interpunkcję i zapis fragmentu.
     """
 
-    word_matches = list(re.finditer(r"\b[\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+\b", text, flags=re.UNICODE))
+    word_matches = list(WORD_PATTERN.finditer(text))
     results = []
     match_counts = Counter()
 
@@ -127,7 +209,7 @@ def find_fragments(text, search_words):
                 "word": current_word,
                 "word_occurrence": match_counts[normalized_current_word],
                 "word_index": index + 1,
-                "fragment": fragment
+                "fragment": fragment,
             })
 
     return results
@@ -143,7 +225,7 @@ def get_main_folder(relative_path):
     strona1
 
     Jeżeli plik HTML leży bezpośrednio w input_html,
-    trafia do pliku _glowny_poziom.txt
+    trafia do pliku _glowny_poziom.txt.
     """
 
     if len(relative_path.parts) > 1:
@@ -228,7 +310,7 @@ def main():
 
             results_by_folder[main_folder].append("\n")
 
-            for match_number, item in enumerate(fragments, start=1):
+            for item in fragments:
                 global_match_number += 1
                 fragment = item["fragment"]
 
