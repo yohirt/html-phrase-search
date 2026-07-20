@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "scrape:ruch": "node scrape_ruch_muzyczny.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.61.1"
+  }
+}

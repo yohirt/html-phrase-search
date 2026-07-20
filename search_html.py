@@ -149,6 +149,30 @@ def extract_text_from_html(file_path):
     return parser.get_text()
 
 
+def extract_text_from_file(file_path):
+    """Czyta zwykły TXT albo wyciąga widoczny tekst z HTML."""
+
+    if file_path.suffix.lower() == ".txt":
+        return file_path.read_text(encoding="utf-8", errors="ignore")
+
+    return extract_text_from_html(file_path)
+
+
+def extract_source_url(file_path):
+    """Zwraca pierwszy adres źródłowy zapisany na początku pliku TXT."""
+
+    if file_path.suffix.lower() != ".txt":
+        return None
+
+    with file_path.open("r", encoding="utf-8", errors="ignore") as source:
+        for _ in range(5):
+            line = source.readline().strip()
+            if line.startswith(("https://", "http://")):
+                return line
+
+    return None
+
+
 def split_text_into_words(text):
     """
     Dzieli tekst na słowa.
@@ -272,13 +296,13 @@ def main():
 
     if not INPUT_DIR.exists():
         print(f"\nBrak katalogu: {INPUT_DIR}")
-        print("Utwórz katalog input_html i wrzuć do niego katalogi z plikami HTML.")
+        print("Utwórz katalog input_html i włóż do niego katalogi z plikami HTML lub TXT.")
         return
 
-    html_files = list(INPUT_DIR.rglob("*.html"))
+    input_files = sorted({*INPUT_DIR.rglob("*.html"), *INPUT_DIR.rglob("*.txt")})
 
-    if not html_files:
-        print("\nNie znaleziono plików HTML w katalogu input_html.")
+    if not input_files:
+        print("\nNie znaleziono plików HTML ani TXT w katalogu input_html.")
         return
 
     results_by_folder = {}
@@ -286,13 +310,14 @@ def main():
     total_counts_by_word = Counter()
     global_match_number = 0
 
-    for html_file in html_files:
-        relative_path = html_file.relative_to(INPUT_DIR)
+    for input_file in input_files:
+        relative_path = input_file.relative_to(INPUT_DIR)
         main_folder = get_main_folder(relative_path)
 
         print(f"Sprawdzam plik: {relative_path}")
 
-        text = extract_text_from_html(html_file)
+        text = extract_text_from_file(input_file)
+        source_url = extract_source_url(input_file)
         fragments = find_fragments(text, search_words)
 
         if fragments:
@@ -305,6 +330,8 @@ def main():
             total_counts_by_word.update(counts_by_word)
 
             results_by_folder[main_folder].append(f"\n=== PLIK: {relative_path} ===\n\n")
+            if source_url:
+                results_by_folder[main_folder].append(f"ŹRÓDŁO: {source_url}\n\n")
 
             for search_word in search_words:
                 normalized_search_word = normalize_word(search_word)
