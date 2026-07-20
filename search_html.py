@@ -60,8 +60,6 @@ class VisibleTextParser(HTMLParser):
         "script",
         "style",
         "head",
-        "meta",
-        "link",
         "noscript",
         "svg",
         "nav",
@@ -71,6 +69,11 @@ class VisibleTextParser(HTMLParser):
         "button",
         "aside",
     }
+
+    # Tagi puste (void elements) nie mają znaczników zamykających. Nie mogą
+    # zwiększać _ignored_depth, bo po np. <link> parser ignorowałby całą
+    # pozostałą część dokumentu. Nie zawierają tekstu, więc nie trzeba ich
+    # dodawać do unwanted_tags.
 
     def __init__(self):
         super().__init__(convert_charrefs=False)
