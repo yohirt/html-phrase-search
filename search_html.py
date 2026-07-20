@@ -173,6 +173,19 @@ def extract_source_url(file_path):
     return None
 
 
+def is_searchable_input_file(file_path):
+    """Pomija techniczne pliki HTTracka, ktore nie sa trescia stron."""
+
+    technical_directories = {"hts-cache"}
+    technical_filenames = {"cookies.txt", "hts-log.txt"}
+    path_parts = {part.lower() for part in file_path.parts}
+
+    return not (
+        path_parts & technical_directories
+        or file_path.name.lower() in technical_filenames
+    )
+
+
 def split_text_into_words(text):
     """
     Dzieli tekst na słowa.
@@ -299,7 +312,11 @@ def main():
         print("Utwórz katalog input_html i włóż do niego katalogi z plikami HTML lub TXT.")
         return
 
-    input_files = sorted({*INPUT_DIR.rglob("*.html"), *INPUT_DIR.rglob("*.txt")})
+    input_files = sorted(
+        file_path
+        for file_path in {*INPUT_DIR.rglob("*.html"), *INPUT_DIR.rglob("*.txt")}
+        if is_searchable_input_file(file_path)
+    )
 
     if not input_files:
         print("\nNie znaleziono plików HTML ani TXT w katalogu input_html.")
