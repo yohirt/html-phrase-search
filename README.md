@@ -1,10 +1,34 @@
 # BasiaSzuka
 
-Program przeszukuje pliki HTML w katalogu `input_html` i zapisuje wyniki do katalogu `wyniki`.
+## Pobieranie artykułów z Ruchu Muzycznego
+
+Serwis `ruchmuzyczny.pl` wymaga JavaScript, dlatego scraper uruchamia Chromium.
+Zapisuje każdy znaleziony artykuł jako czysty tekst UTF-8. Drugi wiersz każdego
+pliku zawiera link do oryginalnego artykułu:
+
+```powershell
+npm.cmd install
+npm.cmd run scrape:ruch
+```
+
+Wyniki trafiają do `input_html/RuchMuzyczny/txt`. Pliki `state.json` i `index.ndjson` pozwalają
+wznowić pobieranie i powiązać pliki z adresami źródłowymi.
+
+Test małego zakresu:
+
+```powershell
+node scrape_ruch_muzyczny.mjs --from 6335 --to 6345 --delay 500
+```
+
+Opcje: `--from`, `--to`, `--delay` (ms), `--output`, `--chrome` i
+`--show-browser`. Domyślnie sprawdzane są identyfikatory 1–6500. Nie uruchamiaj
+kilku kopii równocześnie.
+
+Program przeszukuje pliki HTML i TXT w katalogu `input_html` i zapisuje wyniki do katalogu `wyniki`.
 
 ## Do czego służy program
 
-Skrypt wyszukuje podane słowa w treści stron HTML i zapisuje:
+Skrypt wyszukuje podane słowa w treści plików HTML i TXT oraz zapisuje:
 
 - fragment tekstu wokół każdego trafienia,
 - globalny numer trafienia we wszystkich przeszukanych plikach,
@@ -35,7 +59,7 @@ BasiaSzuka/
 `-- wyniki/
 ```
 
-Pliki HTML należy umieszczać w katalogu `input_html`.
+Pliki HTML lub TXT należy umieszczać w katalogu `input_html`.
 
 ## Jak uruchomić program
 
@@ -90,7 +114,7 @@ Liczbę słów pokazywanych przed i po trafieniu można zmienić w zmiennych `WO
 
 Oznacza, że trzeba utworzyć katalog `input_html` i włożyć do niego pliki HTML.
 
-`Nie znaleziono plików HTML w katalogu input_html.`
+`Nie znaleziono plików HTML ani TXT w katalogu input_html.`
 
 Oznacza, że katalog istnieje, ale nie ma w nim żadnych plików `.html`.
 
