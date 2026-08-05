@@ -8,6 +8,7 @@ import sys
 
 # ==========================
 # KONFIGURACJA
+# Version 2.0.0
 # ==========================
 
 INPUT_DIR = Path("input_html")
